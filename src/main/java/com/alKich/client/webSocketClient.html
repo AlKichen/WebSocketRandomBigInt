@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Client</title>
+    <style>
+        #status {
+            margin-bottom: 10px;
+            padding: 5px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .connected {
+            background-color: green;
+        }
+
+        .disconnected {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+<h1>WebSocket Client</h1>
+
+<div id="status" class="disconnected">Статус: Разорвано</div>
+
+<button onclick="connect()">Установить соединение</button>
+<button onclick="disconnect()">Разорвать соединение</button>
+<button onclick="getRandomNumber()">Получить рандомное число</button>
+
+<div id="randomNumber"></div>
+
+<script>
+    const statusElement = document.getElementById("status");
+    const randomNumberElement = document.getElementById("randomNumber");
+    let socket;
+
+    function setStatus(connected) {
+        statusElement.innerText = "Статус: " + (connected ? "Установлено" : "Разорвано");
+        statusElement.className = connected ? "connected" : "disconnected";
+
+        if (!connected) {
+            clearRandomNumber();
+        }
+    }
+
+    function connect() {
+        socket = new WebSocket("ws://localhost:8080/random");
+
+        socket.onopen = function (event) {
+            setStatus(true);
+        };
+
+        socket.onclose = function (event) {
+            setStatus(false);
+        };
+
+        socket.onmessage = function (event) {
+            if (socket.readyState === WebSocket.OPEN) {
+                const data = JSON.parse(event.data);
+                setRandomNumber("Полученное число: " + data.number);
+            }
+        };
+    }
+
+    function disconnect() {
+        if (socket) {
+            socket.close();
+            socket = null;
+            setStatus(false);
+        }
+    }
+
+    function getRandomNumber() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send("generate");
+        }
+    }
+
+    function setRandomNumber(number) {
+        randomNumberElement.innerText = number;
+    }
+
+    function clearRandomNumber() {
+        randomNumberElement.innerText = "";
+    }
+</script>
+</body>
+</html>
